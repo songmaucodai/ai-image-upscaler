@@ -81,19 +81,35 @@ async function processImages() {
     if (useZip) zip = new JSZip();
 
     try {
-        // Init Model (Fix lỗi model cũ)
-        if (!upscaler) {
-            upscaler = new Upscaler({
-                model: window['@upscalerjs/esrgan-slim'], 
-            });
-            await upscaler.upscale(document.createElement('img')); // Warmup
+    // Init Model
+    if (!upscaler) {
+        const model =
+            (window['@upscalerjs/esrgan-slim'] && (window['@upscalerjs/esrgan-slim'].default || window['@upscalerjs/esrgan-slim'])) ||
+            (window.esrganSlim && (window.esrganSlim.default || window.esrganSlim));
+
+        if (!model) {
+            throw new Error("Không tìm thấy model '@upscalerjs/esrgan-slim' (script CDN có thể chưa load hoặc bị chặn).");
         }
-    } catch (e) {
-        console.error(e);
-        alert("Lỗi tải Model AI. Hãy kiểm tra kết nối mạng lần đầu.");
-        startBtn.disabled = false;
-        return;
+
+        upscaler = new Upscaler({ model });
+
+        // Warmup đúng cách: dùng canvas nhỏ (bitmap source hợp lệ), tránh <img> rỗng
+        const warmCanvas = document.createElement('canvas');
+        warmCanvas.width = 2;
+        warmCanvas.height = 2;
+        const warmCtx = warmCanvas.getContext('2d');
+        warmCtx.fillRect(0, 0, 2, 2);
+
+        await upscaler.upscale(warmCanvas);
     }
+} catch (e) {
+    console.error(e);
+    const msg = e && e.message ? e.message : String(e);
+    alert("Lỗi tải Model AI: " + msg);
+    statusLog.innerText = "Lỗi tải Model AI: " + msg;
+    startBtn.disabled = false;
+    return;
+}
 
     // Vòng lặp xử lý từng ảnh
     for (let i = 0; i < totalFiles; i++) {
