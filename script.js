@@ -83,11 +83,12 @@ async function processImages() {
 
     try {
         if (!upscaler) {
+            // Sử dụng model từ namespace mới của UpscalerJS
             upscaler = new Upscaler({
-                model: window['@tensorflow-models/esrgan-slim'].default,
+                model: window['@upscalerjs/esrgan-slim'], 
             });
             // Warmup model
-            await upscaler.upscale(document.createElement('img'));
+            await upscaler.upscale(document.createElement('img')); 
         }
     } catch (e) {
         console.error(e);
