@@ -1,0 +1,36 @@
+/* Import font Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Hiệu ứng chuyển đổi mượt mà cho Dark Mode */
+body {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Hiệu ứng khi kéo file vào vùng thả */
+.drag-active {
+    border-color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Tùy chỉnh thanh cuộn (Scrollbar) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #9ca3af; /* gray-400 */
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* gray-500 */
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563; /* gray-600 */
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* gray-500 */
+}
