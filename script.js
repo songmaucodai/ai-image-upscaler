@@ -188,3 +188,14 @@ function addResultThumbnail(src, name) {
     `;
     resultArea.appendChild(div);
 }
+
+// --- 4. AUTO COPYRIGHT YEAR ---
+const yearText = document.getElementById('yearText');
+const startYear = 2026; // Năm bắt đầu dự án
+const currentYear = new Date().getFullYear();
+
+if (currentYear > startYear) {
+    yearText.innerText = `${startYear} - ${currentYear}`;
+} else {
+    yearText.innerText = startYear;
+}
