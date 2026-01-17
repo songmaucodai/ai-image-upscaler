@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Upscaler</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: '#3b82f6' } } }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/esrgan-slim/dist/esrgan-slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/upscaler.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        /* Hiệu ứng chuyển đổi mượt mà */
+        body { transition: background-color 0.3s, color 0.3s; }
+        .drag-active { border-color: #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1); }
+        /* Ẩn thanh cuộn mặc định nếu cần */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans">
+
+    <header class="p-4 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 shadow-sm transition-colors duration-300">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+            
+            <h1 class="text-xl font-bold tracking-wide text-gray-800 dark:text-white">AI Upscaler</h1>
+        </div>
+        
+        <button id="themeToggle" class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none flex items-center justify-center transition-all duration-300 ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm">
+            <svg id="sunIcon" class="w-5 h-5 hidden dark:block text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <svg id="moonIcon" class="w-5 h-5 block dark:hidden text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+            </svg>
+        </button>
+    </header>
+
+    <main class="flex-grow container mx-auto p-6 max-w-4xl">
+        
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                
+                <div>
+                    <h3 class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 mb-4 tracking-wider">Cấu hình xử lý</h3>
+                    
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Độ phân giải (Scale)</label>
+                        <div class="relative">
+                            <select id="scaleSelect" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition appearance-none cursor-pointer">
+                                <option value="2">2x (Nhanh nhất)</option>
+                                <option value="4">4x (Chất lượng cao)</option>
+                                <option value="8">8x (Siêu nét - Rất chậm)</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700">
+                        <input type="checkbox" id="zipCheck" checked class="w-5 h-5 text-primary rounded focus:ring-primary border-gray-300 bg-white dark:bg-gray-600 dark:border-gray-500 cursor-pointer">
+                        <label for="zipCheck" class="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-300">Tự động nén .zip khi xong</label>
+                    </div>
+                </div>
+
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700/50 transition group text-center relative overflow-hidden">
+                    <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+                    <div class="z-10 flex flex-col items-center">
+                        <svg class="w-12 h-12 text-gray-400 group-hover:text-primary mb-3 transition transform group-hover:scale-110 duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Click hoặc Kéo thả ảnh</p>
+                        <p class="text-xs text-gray-400 mt-1">Hỗ trợ JPG, PNG (Tối đa 50 ảnh)</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startBtn" onclick="processImages()" disabled class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-blue-500/30 disabled:shadow-none flex justify-center items-center gap-2 text-sm uppercase tracking-wide">
+                <span>Chọn ảnh để bắt đầu</span>
+            </button>
+        </div>
+
+        <div id="progressSection" class="hidden mb-8 transition-all">
+            <div class="flex justify-between text-sm font-medium mb-2 px-1">
+                <span id="progressText" class="text-primary">Đang chuẩn bị...</span>
+                <span id="percentText" class="text-gray-500 dark:text-gray-400">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                <div id="progressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300 relative" style="width: 0%">
+                    <div class="absolute inset-0 bg-white/20 animate-pulse w-full h-full"></div>
+                </div>
+            </div>
+            <p id="statusLog" class="text-xs text-gray-400 mt-2 italic truncate px-1">Đang đợi lệnh...</p>
+        </div>
+
+        <div id="resultArea" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 hidden">
+            </div>
+
+    </main>
+
+    <footer class="p-6 text-center text-xs text-gray-400 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 transition-colors">
+        <p>Hệ thống xử lý ảnh Offline - Không gửi dữ liệu lên Server</p>
+    </footer>
+
+    <script>
+        // --- 1. THEME LOGIC ---
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+        });
+
+        // --- 2. DRAG & DROP & FILE HANDLING ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const startBtn = document.getElementById('startBtn');
+        let selectedFiles = [];
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-active');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 50) {
+                alert("Vui lòng chỉ chọn tối đa 50 ảnh để đảm bảo hiệu năng!");
+                return;
+            }
+            selectedFiles = Array.from(files);
+            if (selectedFiles.length > 0) {
+                startBtn.disabled = false;
+                startBtn.querySelector('span').innerText = `Bắt đầu xử lý (${selectedFiles.length} ảnh)`;
+                // Reset UI
+                document.getElementById('progressSection').classList.add('hidden');
+                document.getElementById('resultArea').classList.add('hidden');
+                document.getElementById('resultArea').innerHTML = '';
+            }
+        }
+
+        // --- 3. UPSCALING LOGIC ---
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const percentText = document.getElementById('percentText');
+        const statusLog = document.getElementById('statusLog');
+        const resultArea = document.getElementById('resultArea');
+
+        let upscaler;
+        let zip;
+
+        async function processImages() {
+            if (selectedFiles.length === 0) return;
+
+            startBtn.disabled = true;
+            progressSection.classList.remove('hidden');
+            resultArea.classList.remove('hidden');
+            resultArea.innerHTML = ''; 
+            
+            const scaleOption = document.getElementById('scaleSelect').value;
+            const useZip = document.getElementById('zipCheck').checked;
+            
+            if (useZip) zip = new JSZip();
+
+            // Load Model
+            statusLog.innerText = "Đang tải Model AI (Lần đầu mất khoảng 10-30s)...";
+            updateProgress(0, selectedFiles.length, 0, "Đang tải Model...");
+
+            try {
+                if (!upscaler) {
+                    upscaler = new Upscaler({
+                        model: window['@tensorflow-models/esrgan-slim'].default,
+                    });
+                    // Warmup model
+                    await upscaler.upscale(document.createElement('img')); 
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi tải Model AI. Hãy kiểm tra kết nối mạng (cần mạng để tải file model lần đầu).");
+                startBtn.disabled = false;
+                return;
+            }
+
+            // Sequential Processing
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const displayIndex = i + 1;
+                const percent = Math.round((i / selectedFiles.length) * 100);
+                
+                updateProgress(displayIndex, selectedFiles.length, percent, `Đang xử lý: ${file.name}`);
+
+                try {
+                    const imgUrl = URL.createObjectURL(file);
+                    const img = new Image();
+                    img.src = imgUrl;
+                    await img.decode(); 
+
+                    let resultSrc;
+
+                    // Logic Upscale
+                    if (scaleOption == "8") {
+                         // Pass 1 (4x)
+                         statusLog.innerText = `[${displayIndex}/${selectedFiles.length}] ${file.name}: Đang chạy Pass 1 (4x)...`;
+                         const pass1 = await upscaler.upscale(img, { 
+                             patchSize: 64, 
+                             padding: 2 
+                         });
+                         
+                         // Pass 2 (4x -> 8x)
+                         statusLog.innerText = `[${displayIndex}/${selectedFiles.length}] ${file.name}: Đang chạy Pass 2 (8x)...`;
+                         const imgPass2 = new Image();
+                         imgPass2.src = pass1;
+                         await imgPass2.decode();
+                         
+                         resultSrc = await upscaler.upscale(imgPass2, {
+                             patchSize: 64,
+                             padding: 2
+                         });
+
+                    } else if (scaleOption == "4") {
+                        statusLog.innerText = `[${displayIndex}/${selectedFiles.length}] ${file.name}: Đang xử lý...`;
+                        resultSrc = await upscaler.upscale(img, {
+                            patchSize: 64, 
+                            padding: 2
+                        });
+                    } else {
+                        // 2x
+                        statusLog.innerText = `[${displayIndex}/${selectedFiles.length}] ${file.name}: Đang xử lý...`;
+                        resultSrc = await upscaler.upscale(img, {
+                            patchSize: 128, 
+                            padding: 2
+                        });
+                    }
+
+                    // Add to UI
+                    addResultThumbnail(resultSrc, file.name);
+
+                    // Add to Zip
+                    if (useZip) {
+                        const base64Data = resultSrc.split(',')[1];
+                        zip.file(`upscaled_${file.name}`, base64Data, {base64: true});
+                    }
+                    
+                    // Release memory
+                    URL.revokeObjectURL(imgUrl);
+
+                } catch (err) {
+                    console.error(err);
+                    statusLog.innerText = `Lỗi file ${file.name}: ${err.message}`;
+                }
+            }
+
+            // Finish
+            updateProgress(selectedFiles.length, selectedFiles.length, 100, "Hoàn tất!");
+            
+            if (useZip) {
+                statusLog.innerText = "Đang nén file Zip...";
+                zip.generateAsync({type:"blob"}).then(function(content) {
+                    saveAs(content, "upscaled_images.zip");
+                    statusLog.innerText = "Đã tải xuống file Zip!";
+                });
+            }
+
+            startBtn.disabled = false;
+            startBtn.querySelector('span').innerText = "Hoàn thành - Chọn ảnh mới";
+            selectedFiles = []; // Reset list
+        }
+
+        function updateProgress(current, total, percent, status) {
+            progressText.innerText = `Xử lý: ${current}/${total}`;
+            percentText.innerText = `${percent}%`;
+            progressBar.style.width = `${percent}%`;
+            if(status) statusLog.innerText = status;
+        }
+
+        function addResultThumbnail(src, name) {
+            const div = document.createElement('div');
+            div.className = "bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden aspect-square relative group border border-gray-200 dark:border-gray-600 shadow-sm";
+            div.innerHTML = `
+                <img src="${src}" class="w-full h-full object-cover">
+                <a href="${src}" download="upscaled_${name}" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 cursor-pointer">
+                    <svg class="w-8 h-8 text-white mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span class="text-white text-[10px] px-2 text-center truncate w-full">${name}</span>
+                </a>
+            `;
+            resultArea.appendChild(div);
+        }
+    </script>
+</body>
+</html>
