@@ -19,7 +19,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/upscaler.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@upscalerjs/esrgan-slim@latest/dist/cdn/index.min.js"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -31,14 +30,12 @@
 
     <header class="p-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md fixed top-0 w-full z-50 transition-colors">
         <div class="container mx-auto max-w-5xl flex justify-between items-center">
-            
             <a href="https://songmaucodai.github.io" class="flex items-center gap-3 hover:opacity-80 transition group">
                 <div class="w-8 h-8 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 </div>
                 <span class="font-bold text-lg tracking-tight">Songmaucodai</span>
             </a>
-            
             <button id="themeToggle" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition ring-1 ring-gray-200 dark:ring-gray-700">
                 <svg id="sunIcon" class="w-5 h-5 hidden dark:block text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <svg id="moonIcon" class="w-5 h-5 block dark:hidden text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
@@ -53,8 +50,7 @@
                 AI Image Upscaler
             </h1>
             <p class="text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
-                Công cụ nâng cấp chất lượng ảnh bằng trí tuệ nhân tạo. 
-                <br>Xử lý trực tiếp trên trình duyệt, không gửi dữ liệu đi đâu.
+                Nâng cấp chất lượng ảnh bằng AI. Xử lý trực tiếp trên trình duyệt.
             </p>
         </div>
         
@@ -62,23 +58,37 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 
                 <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Chế độ Upscale</label>
-                        <div class="relative">
-                            <select id="scaleSelect" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition appearance-none cursor-pointer text-sm">
-                                <option value="2">2x (Tốc độ cao)</option>
-                                <option value="4" selected>4x (Chất lượng tốt - Khuyên dùng)</option>
-                                <option value="8">8x (Siêu nét - Rất chậm)</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Độ phân giải</label>
+                            <div class="relative">
+                                <select id="scaleSelect" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition appearance-none cursor-pointer text-sm">
+                                    <option value="2">2x (Nhanh)</option>
+                                    <option value="4" selected>4x (Chuẩn)</option>
+                                    <option value="8">8x (Siêu nét)</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Định dạng xuất</label>
+                            <div class="relative">
+                                <select id="formatSelect" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition appearance-none cursor-pointer text-sm">
+                                    <option value="png" selected>PNG (Gốc)</option>
+                                    <option value="jpg">JPG (Nhẹ hơn)</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700/50">
                         <input type="checkbox" id="zipCheck" checked class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
-                        <label for="zipCheck" class="text-sm cursor-pointer select-none text-gray-600 dark:text-gray-300">Tự động nén .zip khi hoàn tất</label>
+                        <label for="zipCheck" class="text-sm cursor-pointer select-none text-gray-600 dark:text-gray-300">Tự động nén .zip khi xong</label>
                     </div>
                 </div>
 
@@ -102,7 +112,7 @@
 
         <div id="progressSection" class="hidden mb-12 transition-all">
             <div class="flex justify-between text-sm font-medium mb-3 px-1">
-                <span id="progressText" class="text-blue-600 dark:text-blue-400 animate-pulse">Đang khởi tạo...</span>
+                <span id="progressText" class="text-blue-600 dark:text-blue-400 font-bold">Hoàn thành: 0 / 0</span>
                 <span id="percentText" class="text-gray-600 dark:text-gray-300 font-bold">0%</span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
@@ -110,22 +120,17 @@
                     <div class="absolute inset-0 bg-white/30 animate-[shimmer_2s_infinite]"></div>
                 </div>
             </div>
-            <p id="statusLog" class="text-xs text-gray-400 mt-2 text-center font-mono">Waiting for command...</p>
+            <p id="statusLog" class="text-xs text-gray-400 mt-2 text-center font-mono">Đang đợi lệnh...</p>
         </div>
 
-        <div id="resultArea" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 hidden">
-            </div>
+        <div id="resultArea" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 hidden"></div>
 
     </main>
 
     <footer class="p-8 text-center border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 mt-auto">
-    <p class="text-gray-600 dark:text-gray-400 font-medium mb-2">
-        &copy; <span id="yearText">2026</span> songmaucodai
-    </p>
-    <p class="text-xs text-gray-400">
-        Ứng dụng chạy Offline - Bảo mật tuyệt đối quyền riêng tư.
-    </p>
-</footer>
+        <p class="text-gray-600 dark:text-gray-400 font-medium mb-2">&copy; <span id="yearText">2026</span> songmaucodai</p>
+        <p class="text-xs text-gray-400">Ứng dụng chạy Offline - Bảo mật tuyệt đối quyền riêng tư.</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
